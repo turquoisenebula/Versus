@@ -1,6 +1,6 @@
 @baseUrl = http://localhost:5000
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNhODRiZjRlYjhhNThlMjRlMTY0YmMiLCJpYXQiOjE3OTE2NTk3NDQsImV4cCI6MTc5MjI2NDU0NH0.lvJejxgEX1h4zLAM6C8o8TgKUG7IbCvuKy2X5-A2uXw
-### Health check
+@token = token
+# @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNhODRiZjRlYjhhNThlMjRlMTY0YmMiLCJpYXQiOjE3OTE2NjAyNTQsImV4cCI6MTc5MjI2NTA1NH0.RuNma2Ka9NHnMBoPHcF3KRXi9Hgeo9g8aMeM4CH0BqQ
 GET {{baseUrl}}/api/health
 
 ### Register
@@ -25,3 +25,21 @@ Content-Type: application/json
 ### Current user (set @token from the register or login response)
 GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{token}}
+
+### Create a debate
+POST {{baseUrl}}/api/debates
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Should cities ban private cars downtown?",
+  "description": "Consider the effects on traffic, air quality, local businesses, and accessibility.",
+  "category": "environment",
+  "endsAt": "2026-10-20T18:00:00.000Z"
+}
+
+### List debates with filters
+GET {{baseUrl}}/api/debates?limit=9
+
+### Get a debate by id (replace the id with one from the list or create response)
+GET {{baseUrl}}/api/debates/replace-with-debate-id

@@ -1,10 +1,14 @@
-function validate(schema) {
-  return function validateBody(req, res, next) {
-    const result = schema.safeParse(req.body);
+function validate(schema, source = "body") {
+  if (source !== "body" && source !== "query") {
+    throw new TypeError('Validation source must be "body" or "query"');
+  }
+
+  return function validateRequest(req, res, next) {
+    const result = schema.safeParse(source === "body" ? req.body : req.query);
 
     if (!result.success) {
       const errors = result.error.issues.map((issue) => ({
-        field: issue.path.join(".") || "body",
+        field: issue.path.join(".") || source,
         message: issue.message,
       }));
 
@@ -15,7 +19,11 @@ function validate(schema) {
       });
     }
 
-    req.body = result.data;
+    if (source === "body") {
+      req.body = result.data;
+    } else {
+      req.validatedQuery = result.data;
+    }
     return next();
   };
 }
