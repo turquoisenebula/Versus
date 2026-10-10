@@ -1,0 +1,27 @@
+@baseUrl = http://localhost:5000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNhODRiZjRlYjhhNThlMjRlMTY0YmMiLCJpYXQiOjE3OTE2NTk3NDQsImV4cCI6MTc5MjI2NDU0NH0.lvJejxgEX1h4zLAM6C8o8TgKUG7IbCvuKy2X5-A2uXw
+### Health check
+GET {{baseUrl}}/api/health
+
+### Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "debate_user",
+  "email": "debate.user@example.com",
+  "password": "strong-password-123"
+}
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "debate.user@example.com",
+  "password": "strong-password-123"
+}
+
+### Current user (set @token from the register or login response)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
