@@ -1,0 +1,19 @@
+const cors = require("cors");
+const express = require("express");
+const helmet = require("helmet");
+const env = require("./config/env");
+const errorHandler = require("./middleware/errorHandler");
+
+const app = express();
+
+app.use(helmet());
+app.use(cors({ origin: env.CLIENT_URL }));
+app.use(express.json());
+
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+app.use(errorHandler);
+
+module.exports = app;
