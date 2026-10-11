@@ -1,9 +1,15 @@
 @baseUrl = http://localhost:5000
-@token = token
-# @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNhODRiZjRlYjhhNThlMjRlMTY0YmMiLCJpYXQiOjE3OTE2NjAyNTQsImV4cCI6MTc5MjI2NTA1NH0.RuNma2Ka9NHnMBoPHcF3KRXi9Hgeo9g8aMeM4CH0BqQ
+# Paste tokens from the login responses (don't commit real tokens)
+@tokenA = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNhODRiZjRlYjhhNThlMjRlMTY0YmMiLCJpYXQiOjE3OTE2OTQwODcsImV4cCI6MTc5MjI5ODg4N30.1uO4Bdiya1BK1NScHdeWsOyLbVyrnnb2klYYQcrwFso
+@tokenB = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNiMTI3MGI5MmMwMmEyMTM3MjUwZjIiLCJpYXQiOjE3OTE2OTQxMTEsImV4cCI6MTc5MjI5ODkxMX0.jnVfUfCzKIS_2PSaJ-hYMnjSc1p5wga6JWiEv5DYX0I
+
+# Paste a debate id from the create response
+@debateId = 6acb169cb92c02a213725126
+
+### Health check
 GET {{baseUrl}}/api/health
 
-### Register
+### Register user A
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
@@ -13,7 +19,17 @@ Content-Type: application/json
   "password": "strong-password-123"
 }
 
-### Login
+### Register user B
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "debate_user2",
+  "email": "debate.user2@example.com",
+  "password": "strong-password-123"
+}
+
+### Login user A
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -22,24 +38,124 @@ Content-Type: application/json
   "password": "strong-password-123"
 }
 
-### Current user (set @token from the register or login response)
-GET {{baseUrl}}/api/auth/me
-Authorization: Bearer {{token}}
+### Login user B
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
 
-### Create a debate
+{
+  "email": "debate.user2@example.com",
+  "password": "strong-password-123"
+}
+
+### Current user (A)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{tokenA}}
+
+### Create a debate (ends in 7 days)
 POST {{baseUrl}}/api/debates
 Content-Type: application/json
-Authorization: Bearer {{token}}
+Authorization: Bearer {{tokenA}}
 
 {
   "title": "Should cities ban private cars downtown?",
   "description": "Consider the effects on traffic, air quality, local businesses, and accessibility.",
   "category": "environment",
-  "endsAt": "2026-10-20T18:00:00.000Z"
+  "endsAt": "{{$datetime iso8601 7 d}}"
 }
 
-### List debates with filters
+### List debates
 GET {{baseUrl}}/api/debates?limit=9
 
-### Get a debate by id (replace the id with one from the list or create response)
-GET {{baseUrl}}/api/debates/replace-with-debate-id
+### List: search + category + sort
+GET {{baseUrl}}/api/debates?search=cars&category=environment&sort=ending-soon
+
+### List: limit cap test (expect 400 or limit 50)
+GET {{baseUrl}}/api/debates?limit=9999
+
+### Get debate by id
+GET {{baseUrl}}/api/debates/{{debateId}}
+
+### Get debate with garbage id (expect 404)
+GET {{baseUrl}}/api/debates/abc
+
+### A posts a For argument (expect 201)
+POST {{baseUrl}}/api/debates/{{debateId}}/arguments
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "side": "for",
+  "text": "This is a supporting argument with at least twenty characters."
+}
+
+### A posts Against (expect 409)
+POST {{baseUrl}}/api/debates/{{debateId}}/arguments
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "side": "against",
+  "text": "This is an opposing argument with at least twenty characters."
+}
+
+### B posts Against (expect 201)
+POST {{baseUrl}}/api/debates/{{debateId}}/arguments
+Content-Type: application/json
+Authorization: Bearer {{tokenB}}
+
+{
+  "side": "against",
+  "text": "Another opposing argument with plenty of characters in it."
+}
+
+### No token (expect 401)
+POST {{baseUrl}}/api/debates/{{debateId}}/arguments
+Content-Type: application/json
+
+{
+  "side": "for",
+  "text": "This should be rejected because there is no token."
+}
+
+### Invalid side (expect 400)
+POST {{baseUrl}}/api/debates/{{debateId}}/arguments
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "side": "maybe",
+  "text": "This has a long enough text but an invalid side."
+}
+
+### Text too short (expect 400)
+POST {{baseUrl}}/api/debates/{{debateId}}/arguments
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "side": "for",
+  "text": "Too short"
+}
+
+### Post on garbage debate id (expect 404)
+POST {{baseUrl}}/api/debates/abc/arguments
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "side": "for",
+  "text": "Valid text but the debate id does not exist."
+}
+
+### List arguments as guest (expect no mySide)
+GET {{baseUrl}}/api/debates/{{debateId}}/arguments
+
+### List arguments as A (expect mySide: "for")
+GET {{baseUrl}}/api/debates/{{debateId}}/arguments
+Authorization: Bearer {{tokenA}}
+
+### List For arguments, top sort
+GET {{baseUrl}}/api/debates/{{debateId}}/arguments?page=1&limit=10&side=for&sort=top
+
+### Limit cap test (expect 400 or limit 50)
+GET {{baseUrl}}/api/debates/{{debateId}}/arguments?limit=9999
