@@ -13,7 +13,8 @@ const createArgument = asyncHandler(async (req, res) => {
 const listArguments = asyncHandler(async (req, res) => {
   const result = await argumentService.listArguments(
     req.params.id,
-    req.validatedQuery
+    req.validatedQuery,
+    req.user?._id
   );
 
   if (req.user) {

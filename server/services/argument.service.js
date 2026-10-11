@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Argument = require("../models/Argument");
+const ArgumentUpvote = require("../models/ArgumentUpvote");
 const Debate = require("../models/Debate");
 const ApiError = require("../utils/ApiError");
 
@@ -56,7 +57,8 @@ async function createArgument(userId, debateId, { side, text }) {
 
 async function listArguments(
   debateId,
-  { page = 1, limit = 10, side, sort = "newest" } = {}
+  { page = 1, limit = 10, side, sort = "newest" } = {},
+  userId
 ) {
   const debateObjectId = toObjectId(debateId);
   const debateExists = await Debate.exists({ _id: debateObjectId });
@@ -86,8 +88,24 @@ async function listArguments(
       .lean(),
   ]);
 
+  const upvotedArgumentIds =
+    userId && argumentsList.length > 0
+      ? await ArgumentUpvote.find({
+          user: userId,
+          argument: { $in: argumentsList.map((argument) => argument._id) },
+        })
+          .select("argument")
+          .lean()
+      : [];
+  const upvotedIds = new Set(
+    upvotedArgumentIds.map((upvote) => upvote.argument.toString())
+  );
+
   return {
-    arguments: argumentsList,
+    arguments: argumentsList.map((argument) => ({
+      ...argument,
+      myUpvote: upvotedIds.has(argument._id.toString()),
+    })),
     page,
     limit,
     total,

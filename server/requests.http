@@ -3,8 +3,11 @@
 @tokenA = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNhODRiZjRlYjhhNThlMjRlMTY0YmMiLCJpYXQiOjE3OTE2OTQwODcsImV4cCI6MTc5MjI5ODg4N30.1uO4Bdiya1BK1NScHdeWsOyLbVyrnnb2klYYQcrwFso
 @tokenB = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNiMTI3MGI5MmMwMmEyMTM3MjUwZjIiLCJpYXQiOjE3OTE2OTQxMTEsImV4cCI6MTc5MjI5ODkxMX0.jnVfUfCzKIS_2PSaJ-hYMnjSc1p5wga6JWiEv5DYX0I
 
+# Paste argument ids from the respective create responses
+@argumentA = 6acb1cea294d10dfa42944b5
+@argumentB = 6acb1d1a294d10dfa42944be
 # Paste a debate id from the create response
-@debateId = 6aca91219a438779f1ffe079
+@debateId = 6acb12e5b92c02a2137250f8
 
 ### Health check
 GET {{baseUrl}}/api/health
@@ -191,6 +194,29 @@ Authorization: Bearer {{tokenB}}
   "text": "Another opposing argument with plenty of characters in it."
 }
 
+### A upvotes B's argument (expect upvoted: true)
+POST {{baseUrl}}/api/arguments/{{argumentB}}/upvote
+Authorization: Bearer {{tokenA}}
+
+### A upvotes B's argument again (expect upvoted: false)
+POST {{baseUrl}}/api/arguments/{{argumentB}}/upvote
+Authorization: Bearer {{tokenA}}
+
+### A upvotes their own argument (expect 403)
+POST {{baseUrl}}/api/arguments/{{argumentA}}/upvote
+Authorization: Bearer {{tokenA}}
+
+### Upvote without token (expect 401)
+POST {{baseUrl}}/api/arguments/{{argumentB}}/upvote
+
+### Upvote with garbage argument id (expect 404)
+POST {{baseUrl}}/api/arguments/abc/upvote
+Authorization: Bearer {{tokenA}}
+
+### Upvote nonexistent argument (expect 404)
+POST {{baseUrl}}/api/arguments/000000000000000000000000/upvote
+Authorization: Bearer {{tokenA}}
+
 ### No token (expect 401)
 POST {{baseUrl}}/api/debates/{{debateId}}/arguments
 Content-Type: application/json
@@ -239,6 +265,10 @@ Authorization: Bearer {{tokenA}}
 
 ### List For arguments, top sort
 GET {{baseUrl}}/api/debates/{{debateId}}/arguments?page=1&limit=10&side=for&sort=top
+
+### List arguments as A, top sort (expect upvoteCount and myUpvote per argument)
+GET {{baseUrl}}/api/debates/{{debateId}}/arguments?page=1&limit=10&sort=top
+Authorization: Bearer {{tokenA}}
 
 ### Limit cap test (expect 400 or limit 50)
 GET {{baseUrl}}/api/debates/{{debateId}}/arguments?limit=9999
