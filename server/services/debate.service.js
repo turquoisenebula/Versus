@@ -132,6 +132,14 @@ async function getDebateById(id, viewerId) {
     throw new ApiError(404, "Debate not found");
   }
 
+  if (debate.status === "closed") {
+    await debate.populate({
+      path: "bestArgument",
+      select: "text side upvoteCount author",
+      populate: { path: "author", select: "username avatar" },
+    });
+  }
+
   if (!viewerId) {
     return debate;
   }
