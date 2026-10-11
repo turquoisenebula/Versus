@@ -8,6 +8,8 @@
 @argumentB = 6acb1d1a294d10dfa42944be
 # Paste a debate id from the create response
 @debateId = 6acb12e5b92c02a2137250f8
+@username = debate_user
+@avatarUrl = https://example.com/avatar.png
 
 ### Health check
 GET {{baseUrl}}/api/health
@@ -269,6 +271,60 @@ GET {{baseUrl}}/api/debates/{{debateId}}/arguments?page=1&limit=10&side=for&sort
 ### List arguments as A, top sort (expect upvoteCount and myUpvote per argument)
 GET {{baseUrl}}/api/debates/{{debateId}}/arguments?page=1&limit=10&sort=top
 Authorization: Bearer {{tokenA}}
+
+### Get a public user profile
+GET {{baseUrl}}/api/users/{{username}}
+
+### Get a profile with uppercase username
+GET {{baseUrl}}/api/users/DEBATE_USER
+
+### Get a nonexistent profile (expect 404)
+GET {{baseUrl}}/api/users/user_that_does_not_exist
+
+### List all debates a user took part in
+GET {{baseUrl}}/api/users/{{username}}/debates?type=all&page=1&limit=10
+
+### List debates created by a user
+GET {{baseUrl}}/api/users/{{username}}/debates?type=created
+
+### List debates a user argued in
+GET {{baseUrl}}/api/users/{{username}}/debates?type=argued
+
+### Update own profile bio and avatar
+PUT {{baseUrl}}/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "bio": "Interested in thoughtful debates.",
+  "avatar": "{{avatarUrl}}"
+}
+
+### Update profile with an unauthorized stats field (expect 400)
+PUT {{baseUrl}}/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "stats": { "wins": 100 }
+}
+
+### Update profile with a javascript URL (expect 400)
+PUT {{baseUrl}}/api/users/me
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "avatar": "javascript:alert(1)"
+}
+
+### Update profile without a token (expect 401)
+PUT {{baseUrl}}/api/users/me
+Content-Type: application/json
+
+{
+  "bio": "This update should not be accepted."
+}
 
 ### Limit cap test (expect 400 or limit 50)
 GET {{baseUrl}}/api/debates/{{debateId}}/arguments?limit=9999

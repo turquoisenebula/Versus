@@ -12,6 +12,7 @@ debate-platform/
 │   ├── controllers/   (auth, user, debate, argument, vote)
 │   ├── services/      (debate.service, vote.service, argument.service, debateClose.service)
 │   ├── jobs/          (closeDebates.job.js)
+│   ├── scripts/       (closeDebatesOnce.js)
 │   ├── middleware/    (auth, optionalAuth, validate, errorHandler, rateLimiter)
 │   ├── utils/         (ApiError, asyncHandler, generateToken)
 │   └── tests/         (debateClose.test.js, vote.test.js)
