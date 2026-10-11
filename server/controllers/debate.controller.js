@@ -7,7 +7,10 @@ const createDebate = asyncHandler(async (req, res) => {
 });
 
 const listDebates = asyncHandler(async (req, res) => {
-  const result = await debateService.listDebates(req.validatedQuery);
+  const result = await debateService.listDebates({
+    ...req.validatedQuery,
+    viewerId: req.user?._id,
+  });
   res.status(200).json(result);
 });
 

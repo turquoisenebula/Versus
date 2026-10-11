@@ -1,8 +1,39 @@
 const mongoose = require("mongoose");
+const Argument = require("../models/Argument");
 const Debate = require("../models/Debate");
+const Vote = require("../models/Vote");
 const ApiError = require("../utils/ApiError");
 
 const creatorFields = "username avatar";
+
+async function attachViewerState(debates, viewerId) {
+  if (!viewerId || debates.length === 0) {
+    return debates;
+  }
+
+  const debateIds = debates.map((debate) => debate._id);
+  const [votes, argumentsList] = await Promise.all([
+    Vote.find({ debate: { $in: debateIds }, voter: viewerId })
+      .select("debate choice")
+      .lean(),
+    Argument.find({ debate: { $in: debateIds }, author: viewerId })
+      .select("debate side")
+      .lean(),
+  ]);
+  const votesByDebate = new Map(
+    votes.map((vote) => [String(vote.debate), vote.choice])
+  );
+  const sidesByDebate = new Map(
+    argumentsList.map((argument) => [String(argument.debate), argument.side])
+  );
+
+  return debates.map((debate) => {
+    const result = debate.toObject ? debate.toObject() : debate;
+    result.myVote = votesByDebate.get(String(debate._id)) || null;
+    result.mySide = sidesByDebate.get(String(debate._id)) || null;
+    return result;
+  });
+}
 
 async function createDebate(userId, data) {
   const debate = await Debate.create({
@@ -20,6 +51,7 @@ async function listDebates({
   category,
   status,
   sort = "newest",
+  viewerId,
 }) {
   const filter = {};
   if (search) {
@@ -82,7 +114,7 @@ async function listDebates({
   }
 
   return {
-    debates,
+    debates: await attachViewerState(debates, viewerId),
     page,
     limit,
     total,
@@ -90,7 +122,7 @@ async function listDebates({
   };
 }
 
-async function getDebateById(id, _viewerId) {
+async function getDebateById(id, viewerId) {
   if (!mongoose.isObjectIdOrHexString(id)) {
     throw new ApiError(404, "Debate not found");
   }
@@ -100,7 +132,11 @@ async function getDebateById(id, _viewerId) {
     throw new ApiError(404, "Debate not found");
   }
 
-  return debate;
+  if (!viewerId) {
+    return debate;
+  }
+
+  return (await attachViewerState([debate], viewerId))[0];
 }
 
 module.exports = { createDebate, listDebates, getDebateById };

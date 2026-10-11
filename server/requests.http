@@ -4,7 +4,7 @@
 @tokenB = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YWNiMTI3MGI5MmMwMmEyMTM3MjUwZjIiLCJpYXQiOjE3OTE2OTQxMTEsImV4cCI6MTc5MjI5ODkxMX0.jnVfUfCzKIS_2PSaJ-hYMnjSc1p5wga6JWiEv5DYX0I
 
 # Paste a debate id from the create response
-@debateId = 6acb169cb92c02a213725126
+@debateId = 6aca91219a438779f1ffe079
 
 ### Health check
 GET {{baseUrl}}/api/health
@@ -77,6 +77,89 @@ GET {{baseUrl}}/api/debates/{{debateId}}
 
 ### Get debate with garbage id (expect 404)
 GET {{baseUrl}}/api/debates/abc
+
+### Vote For (expect voteCounts.for to increase)
+PUT {{baseUrl}}/api/debates/{{debateId}}/vote
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "choice": "for"
+}
+
+### Change vote to Against (expect For -1 and Against +1)
+PUT {{baseUrl}}/api/debates/{{debateId}}/vote
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "choice": "against"
+}
+
+### Change vote to Neutral
+PUT {{baseUrl}}/api/debates/{{debateId}}/vote
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "choice": "neutral"
+}
+
+### Same vote twice (both requests are idempotent)
+PUT {{baseUrl}}/api/debates/{{debateId}}/vote
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "choice": "neutral"
+}
+
+### 
+PUT {{baseUrl}}/api/debates/{{debateId}}/vote
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "choice": "neutral"
+}
+
+### Vote without token (expect 401)
+PUT {{baseUrl}}/api/debates/{{debateId}}/vote
+Content-Type: application/json
+
+{
+  "choice": "for"
+}
+
+### Invalid vote choice (expect 400)
+PUT {{baseUrl}}/api/debates/{{debateId}}/vote
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "choice": "maybe"
+}
+
+### Vote on debate with garbage id (expect 404)
+PUT {{baseUrl}}/api/debates/abc/vote
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{
+  "choice": "for"
+}
+
+### Get my vote (expect "neutral")
+GET {{baseUrl}}/api/debates/{{debateId}}/vote/me
+Authorization: Bearer {{tokenA}}
+
+### Get debate as A (expect myVote and updated voteCounts)
+GET {{baseUrl}}/api/debates/{{debateId}}
+Authorization: Bearer {{tokenA}}
+
+### Remove vote (expect myVote: null and Neutral -1)
+DELETE {{baseUrl}}/api/debates/{{debateId}}/vote
+Authorization: Bearer {{tokenA}}
 
 ### A posts a For argument (expect 201)
 POST {{baseUrl}}/api/debates/{{debateId}}/arguments

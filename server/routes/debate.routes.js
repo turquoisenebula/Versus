@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 const debateController = require("../controllers/debate.controller");
 const argumentRoutes = require("./argument.routes");
+const voteRoutes = require("./vote.routes");
 const auth = require("../middleware/auth");
 const optionalAuth = require("../middleware/optionalAuth");
 const validate = require("../middleware/validate");
@@ -51,6 +52,7 @@ router.get(
   debateController.listDebates
 );
 router.use("/:id/arguments", argumentRoutes);
+router.use("/:id/vote", voteRoutes);
 router.get("/:id", optionalAuth, debateController.getDebateById);
 router.post("/", auth, validate(createDebateSchema), debateController.createDebate);
 
